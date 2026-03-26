@@ -1,0 +1,17 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+godbmigrate
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go
+vendor/
+*.test
+*.out
