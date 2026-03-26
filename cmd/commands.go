@@ -14,6 +14,8 @@ import (
 
 const migrationsDir = "migrations"
 
+var revertAll bool
+
 var newCmd = &cobra.Command{
 	Use:   "new [name]",
 	Short: "Create a new migration",
@@ -191,9 +193,80 @@ var upCmd = &cobra.Command{
 	},
 }
 
+var downCmd = &cobra.Command{
+	Use:   "down",
+	Short: "Revert the last migration or all if --all is provided",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := initDB(); err != nil {
+			return err
+		}
+		defer store.Close()
+
+		appliedVersions, err := store.GetAppliedVersions()
+		if err != nil {
+			return err
+		}
+
+		if len(appliedVersions) == 0 {
+			fmt.Println("No applied migrations to revert.")
+			return nil
+		}
+
+		var toRevert []int64
+		if revertAll {
+			toRevert = appliedVersions
+		} else {
+			toRevert = []int64{appliedVersions[0]}
+		}
+
+		files, err := os.ReadDir(migrationsDir)
+		if err != nil {
+			return fmt.Errorf("could not read migrations directory: %w", err)
+		}
+
+		for _, version := range toRevert {
+			downFile := ""
+			for _, f := range files {
+				if f.IsDir() || !strings.HasSuffix(f.Name(), ".down.sql") {
+					continue
+				}
+				if strings.HasPrefix(f.Name(), strconv.FormatInt(version, 10)+"_") {
+					downFile = f.Name()
+					break
+				}
+			}
+
+			if downFile == "" {
+				return fmt.Errorf("down migration file not found for version %d", version)
+			}
+
+			fmt.Printf("Reverting migration: %s... ", downFile)
+
+			path := filepath.Join(migrationsDir, downFile)
+			content, err := os.ReadFile(path)
+			if err != nil {
+				return fmt.Errorf("could not read migration file %s: %w", downFile, err)
+			}
+
+			if err := store.RevertMigration(version, string(content)); err != nil {
+				fmt.Println("FAILED")
+				return err
+			}
+
+			fmt.Println("OK")
+		}
+
+		fmt.Println("Selected migrations reverted successfully.")
+		return nil
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(newCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(upCmd)
+	
+	downCmd.Flags().BoolVar(&revertAll, "all", false, "Revert all applied migrations")
+	rootCmd.AddCommand(downCmd)
 }

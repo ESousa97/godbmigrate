@@ -83,6 +83,52 @@ func (s *MigrationStore) ApplyMigration(version int64, sqlContent string) error 
 	return nil
 }
 
+func (s *MigrationStore) RevertMigration(version int64, sqlContent string) error {
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return fmt.Errorf("could not start transaction: %w", err)
+	}
+
+	// Execute down migration SQL
+	if _, err := tx.Exec(sqlContent); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to execute down migration: %w", err)
+	}
+
+	// Remove the migration record
+	if _, err := tx.Exec("DELETE FROM schema_migrations WHERE version = $1", version); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to remove migration version: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (s *MigrationStore) GetAppliedVersions() ([]int64, error) {
+	var versions []int64
+	query := "SELECT version FROM schema_migrations ORDER BY version DESC"
+	
+	rows, err := s.DB.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("could not query applied versions: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var v int64
+		if err := rows.Scan(&v); err != nil {
+			return nil, fmt.Errorf("could not scan version: %w", err)
+		}
+		versions = append(versions, v)
+	}
+	
+	return versions, nil
+}
+
 func (s *MigrationStore) Close() error {
 	return s.DB.Close()
 }
