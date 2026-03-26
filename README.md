@@ -1,65 +1,128 @@
 # godbmigrate
 
-A simple and efficient database migration engine for Go projects.
+> A fast, flexible, and database-agnostic migration tool for Go projects.
 
-## Installation
+![Go Report Card](https://goreportcard.com/badge/github.com/lucassousa/godbmigrate)
+![Go Reference](https://pkg.go.dev/badge/github.com/lucassousa/godbmigrate.svg)
+![License](https://img.shields.io/github/license/lucassousa/godbmigrate)
+![Go Version](https://img.shields.io/github/go-mod/go-version/lucassousa/godbmigrate)
+![Last Commit](https://img.shields.io/github/last-commit/lucassousa/godbmigrate)
+
+---
+
+godbmigrate is a lightweight CLI tool and Go library designed to handle database migrations with ease. It supports PostgreSQL out-of-the-box and focuses on simplicity, speed, and safety through advisory locks.
+
+## Demonstração
+
+### CLI Usage
 
 ```bash
-go get github.com/ESousa97/godbmigrate
+# Create a new migration
+godbmigrate new add_users_table
+
+# Apply all pending migrations
+godbmigrate up --dsn "postgres://user:pass@localhost:5432/dbname?sslmode=disable"
+
+# Revert the last migration
+godbmigrate down --dsn "postgres://user:pass@localhost:5432/dbname?sslmode=disable"
 ```
 
-## Usage
+### Library Usage
 
-### Create a New Migration
+```go
+import "github.com/lucassousa/godbmigrate/internal/db"
+
+// Connect to the database
+store, err := db.Connect(dsn)
+if err != nil {
+    log.Fatal(err)
+}
+defer store.Close()
+
+// Apply pending migrations
+if err := store.ApplyMigration(version, sqlContent); err != nil {
+    log.Fatal(err)
+}
+```
+
+## Stack Tecnológico
+
+| Tecnologia | Papel |
+|---|---|
+| Go | Linguagem de programação principal |
+| Cobra | Framework para criação de CLI |
+| PostgreSQL | Banco de dados alvo (suporte inicial) |
+| Slog | Logging estruturado nativo |
+
+## Pré-requisitos
+
+- Go >= 1.25.0
+- PostgreSQL (ou Docker para rodar via Makefile)
+
+## Instalação e Uso
+
+### Como binário
+
 ```bash
-godbmigrate new <migration_name>
+go install github.com/lucassousa/godbmigrate@latest
 ```
 
-This will generate two files in the `migrations/` directory:
-- `YYYYMMDDHHMMSS_<name>.up.sql`
-- `YYYYMMDDHHMMSS_<name>.down.sql`
+### A partir do source
 
-### List Migrations
 ```bash
-godbmigrate list
+git clone https://github.com/lucassousa/godbmigrate.git
+cd godbmigrate
+make build
+# Configure suas variáveis no Makefile ou via flags
+make test-full
 ```
 
-### Apply Pending Migrations
-```bash
-godbmigrate up --dsn "postgres://user:pass@host:5432/db?sslmode=disable"
-```
+## Makefile Targets
 
-### Revert Migrations
-```bash
-# Revert the last applied migration
-godbmigrate down --dsn "postgres://user:pass@host:5432/db?sslmode=disable"
+| Target | Descrição |
+|---|---|
+| `build` | Compila o binário `godbmigrate.exe` |
+| `db-up` | Inicia um container PostgreSQL via Docker |
+| `db-down` | Para e remove o container PostgreSQL |
+| `test-full` | Executa um ciclo completo de teste (build, new, up, status, down) |
+| `clean` | Remove binários e diretório de migrations temporárias |
 
-# Revert all applied migrations
-godbmigrate down --all --dsn "postgres://user:pass@host:5432/db?sslmode=disable"
-```
+## Arquitetura
 
-### Check Status
-```bash
-godbmigrate status --dsn "postgres://user:pass@host:5432/db?sslmode=disable"
-```
+O projeto segue uma estrutura modular simples:
+- `cmd/`: Define a interface CLI usando Cobra.
+- `internal/db/`: Contém a lógica de persistência e execução de SQL.
+- `migrations/`: Diretório padrão para os arquivos `.up.sql` e `.down.sql`.
 
-## Features
-- **PostgreSQL Support**: Native integration using `database/sql` and `lib/pq`.
-- **Transaction Safety**: Every migration runs in its own transaction.
-- **Concurrency Control**: Uses `pg_advisory_lock` to prevent multiple simultaneous migration processes.
-- **Structured Logging**: Professional logs using Go's `slog`.
-- **Roadmap Complete**: All 5 phases of development have been finished.
+Utiliza **Advisory Locks** do PostgreSQL para garantir que apenas um processo de migração execute por vez, evitando condições de corrida em ambientes distribuídos.
+
+## API Reference
+
+Veja a documentação completa em [pkg.go.dev](https://pkg.go.dev/github.com/lucassousa/godbmigrate).
+
+## Configuração
+
+| Variável | Descrição | Tipo | Padrão |
+|---|---|---|---|
+| `--dsn` | String de conexão PostgreSQL | string | `postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable` |
+| `--debug` | Habilita logs em nível DEBUG | bool | `false` |
 
 ## Roadmap
 
-- [x] **Phase 1**: Initial CLI structure and local migration generation.
-- [x] **Phase 2**: PostgreSQL integration and migration tracking table.
-- [x] **Phase 3**: Execution of migrations (Up) and transaction support.
-- [x] **Phase 4**: Reversion of migrations (Down) and rollback support.
-- [x] **Phase 5**: Advisory locks, professional logging, and Docker testing environment.
+- [x] Suporte básico para PostgreSQL
+- [x] Advisory Locks para concorrência
+- [ ] Suporte para MySQL e SQLite
+- [ ] Migrações programáticas em Go (além de SQL)
+- [ ] Integração com CI/CD (GitHub Actions)
 
-## Technologies
-- Go (Golang)
-- Cobra CLI
-- PostgreSQL (lib/pq)
-- Docker (for testing)
+## Contribuindo
+
+Veja [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes sobre como abrir PRs e seguir padrões de código.
+
+## Licença
+
+Distribuído sob a licença MIT. Veja [LICENSE](LICENSE) para mais informações.
+
+## Autor
+
+Enoque Sousa - [Portfólio](https://enoquesousa.vercel.app) - [GitHub](https://github.com/lucassousa)

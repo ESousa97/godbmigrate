@@ -17,8 +17,8 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "godbmigrate",
-	Short: "godbmigrate is a simple tool to manage database migrations",
-	Long:  `A fast and flexible database migration tool for Go projects.`,
+	Short: "A simple and robust database migration tool",
+	Long:  `godbmigrate is a CLI tool designed to manage database schema evolutions with ease and safety.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		opts := &slog.HandlerOptions{
 			Level: slog.LevelInfo,

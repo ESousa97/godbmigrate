@@ -19,7 +19,8 @@ var revertAll bool
 
 var newCmd = &cobra.Command{
 	Use:   "new [name]",
-	Short: "Create a new migration",
+	Short: "Create a new pair of migration files",
+	Long:  `Generates a new set of .up.sql and .down.sql migration files with a timestamped prefix.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
@@ -56,7 +57,8 @@ func createFile(path string) error {
 
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all migrations",
+	Short: "List all available migration files",
+	Long:  `Scans the migrations directory and lists all discovered migration files in alphabetical order.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		files, err := os.ReadDir(migrationsDir)
 		if err != nil {
@@ -91,7 +93,8 @@ var listCmd = &cobra.Command{
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show current migration status",
+	Short: "Show the current migration version",
+	Long:  `Queries the database to identify the last successfully applied migration version.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := initDB(); err != nil {
 			return err
@@ -122,6 +125,7 @@ type migrationFile struct {
 var upCmd = &cobra.Command{
 	Use:   "up",
 	Short: "Apply all pending migrations",
+	Long:  `Identifies migration files that haven't been applied yet and executes them in chronological order.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := initDB(); err != nil {
 			return err
@@ -201,7 +205,8 @@ var upCmd = &cobra.Command{
 
 var downCmd = &cobra.Command{
 	Use:   "down",
-	Short: "Revert the last migration or all if --all is provided",
+	Short: "Revert migrations",
+	Long:  `Reverts the last applied migration. If the --all flag is provided, it reverts all applied migrations in reverse order.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := initDB(); err != nil {
 			return err

@@ -10,10 +10,17 @@ import (
 
 const migrationLockID = 123456789 // Unique ID for our advisory lock
 
+// MigrationStore manages the database connection and the schema_migrations table.
+// It uses a standard [*sql.DB] handle for all operations.
 type MigrationStore struct {
+	// DB is the underlying database connection.
 	DB *sql.DB
 }
 
+// Connect establishes a connection to a PostgreSQL database using the provided DSN.
+// It verifies the connection with a ping and ensures the schema_migrations table exists.
+//
+// Returns a [*MigrationStore] for managing migrations.
 func Connect(dsn string) (*MigrationStore, error) {
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
@@ -32,6 +39,8 @@ func Connect(dsn string) (*MigrationStore, error) {
 	return store, nil
 }
 
+// EnsureSchemaTable creates the schema_migrations table if it doesn't already exist.
+// This table tracks applied migration versions and their timestamps.
 func (s *MigrationStore) EnsureSchemaTable() error {
 	query := `
 	CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -46,6 +55,10 @@ func (s *MigrationStore) EnsureSchemaTable() error {
 	return nil
 }
 
+// AcquireLock attempts to obtain a PostgreSQL advisory lock.
+// This prevents multiple migration processes from running concurrently.
+//
+// Returns an error if the lock cannot be acquired or if another process holds it.
 func (s *MigrationStore) AcquireLock() error {
 	slog.Debug("Acquiring advisory lock", "lock_id", migrationLockID)
 	var locked bool
@@ -61,6 +74,7 @@ func (s *MigrationStore) AcquireLock() error {
 	return nil
 }
 
+// ReleaseLock releases the previously acquired advisory lock.
 func (s *MigrationStore) ReleaseLock() error {
 	slog.Debug("Releasing advisory lock", "lock_id", migrationLockID)
 	query := "SELECT pg_advisory_unlock($1)"
@@ -72,6 +86,8 @@ func (s *MigrationStore) ReleaseLock() error {
 	return nil
 }
 
+// GetLatestVersion returns the version number of the most recently applied migration.
+// If no migrations have been applied, it returns 0 without an error.
 func (s *MigrationStore) GetLatestVersion() (int64, error) {
 	var version int64
 	query := "SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1"
@@ -87,6 +103,8 @@ func (s *MigrationStore) GetLatestVersion() (int64, error) {
 	return version, nil
 }
 
+// ApplyMigration executes a migration's SQL content and records its version in the schema table.
+// It runs the entire operation within a single transaction.
 func (s *MigrationStore) ApplyMigration(version int64, sqlContent string) error {
 	tx, err := s.DB.Begin()
 	if err != nil {
@@ -112,6 +130,8 @@ func (s *MigrationStore) ApplyMigration(version int64, sqlContent string) error 
 	return nil
 }
 
+// RevertMigration executes a 'down' migration's SQL content and removes its record from the schema table.
+// It runs the entire operation within a single transaction.
 func (s *MigrationStore) RevertMigration(version int64, sqlContent string) error {
 	tx, err := s.DB.Begin()
 	if err != nil {
@@ -137,6 +157,7 @@ func (s *MigrationStore) RevertMigration(version int64, sqlContent string) error
 	return nil
 }
 
+// GetAppliedVersions retrieves all migration versions from the schema table, sorted in descending order.
 func (s *MigrationStore) GetAppliedVersions() ([]int64, error) {
 	var versions []int64
 	query := "SELECT version FROM schema_migrations ORDER BY version DESC"
@@ -158,6 +179,7 @@ func (s *MigrationStore) GetAppliedVersions() ([]int64, error) {
 	return versions, rows.Err()
 }
 
+// Close closes the underlying database connection.
 func (s *MigrationStore) Close() error {
 	return s.DB.Close()
 }
