@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/lucassousa/godbmigrate/internal/db"
@@ -10,6 +11,7 @@ import (
 
 var (
 	dsn   string
+	debug bool
 	store *db.MigrationStore
 )
 
@@ -17,6 +19,16 @@ var rootCmd = &cobra.Command{
 	Use:   "godbmigrate",
 	Short: "godbmigrate is a simple tool to manage database migrations",
 	Long:  `A fast and flexible database migration tool for Go projects.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		opts := &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		}
+		if debug {
+			opts.Level = slog.LevelDebug
+		}
+		logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
+		slog.SetDefault(logger)
+	},
 }
 
 func Execute() {
@@ -28,6 +40,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&dsn, "dsn", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable", "PostgreSQL DSN")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug logging")
 }
 
 // initDB initializes the database connection if a DSN is provided and the command needs it

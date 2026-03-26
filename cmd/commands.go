@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -25,7 +26,7 @@ var newCmd = &cobra.Command{
 		timestamp := time.Now().Format("20060102150405")
 
 		if err := os.MkdirAll(migrationsDir, 0755); err != nil {
-			fmt.Printf("Error creating migrations directory: %v\n", err)
+			slog.Error("Failed to create migrations directory", "error", err)
 			return
 		}
 
@@ -33,16 +34,15 @@ var newCmd = &cobra.Command{
 		downFile := filepath.Join(migrationsDir, fmt.Sprintf("%s_%s.down.sql", timestamp, name))
 
 		if err := createFile(upFile); err != nil {
-			fmt.Printf("Error creating up file: %v\n", err)
+			slog.Error("Failed to create up file", "error", err)
 			return
 		}
 		if err := createFile(downFile); err != nil {
-			fmt.Printf("Error creating down file: %v\n", err)
+			slog.Error("Failed to create down file", "error", err)
 			return
 		}
 
-		fmt.Printf("Created: %s\n", upFile)
-		fmt.Printf("Created: %s\n", downFile)
+		slog.Info("Migration files created", "up", upFile, "down", downFile)
 	},
 }
 
@@ -61,10 +61,10 @@ var listCmd = &cobra.Command{
 		files, err := os.ReadDir(migrationsDir)
 		if err != nil {
 			if os.IsNotExist(err) {
-				fmt.Println("No migrations folder found.")
+				slog.Warn("No migrations folder found")
 				return
 			}
-			fmt.Printf("Error reading migrations: %v\n", err)
+			slog.Error("Error reading migrations", "error", err)
 			return
 		}
 
@@ -78,7 +78,7 @@ var listCmd = &cobra.Command{
 		sort.Strings(fileNames)
 
 		if len(fileNames) == 0 {
-			fmt.Println("No migrations found.")
+			slog.Info("No migrations found")
 			return
 		}
 
@@ -104,9 +104,9 @@ var statusCmd = &cobra.Command{
 		}
 
 		if version == 0 {
-			fmt.Println("No migrations have been applied yet.")
+			slog.Info("No migrations have been applied yet")
 		} else {
-			fmt.Printf("Current migration version: %d\n", version)
+			slog.Info("Current status", "version", version)
 		}
 
 		return nil
@@ -127,6 +127,11 @@ var upCmd = &cobra.Command{
 			return err
 		}
 		defer store.Close()
+
+		if err := store.AcquireLock(); err != nil {
+			return err
+		}
+		defer store.ReleaseLock()
 
 		currentVersion, err := store.GetLatestVersion()
 		if err != nil {
@@ -168,27 +173,28 @@ var upCmd = &cobra.Command{
 		})
 
 		if len(pending) == 0 {
-			fmt.Println("No pending migrations to apply.")
+			slog.Info("No pending migrations to apply")
 			return nil
 		}
 
 		for _, m := range pending {
-			fmt.Printf("Applying migration: %s... ", m.name)
+			slog.Info("Applying migration", "name", m.name)
 
 			content, err := os.ReadFile(m.path)
 			if err != nil {
-				return fmt.Errorf("could not read migration file %s: %w", m.name, err)
-			}
-
-			if err := store.ApplyMigration(m.version, string(content)); err != nil {
-				fmt.Println("FAILED")
+				slog.Error("Could not read migration file", "name", m.name, "error", err)
 				return err
 			}
 
-			fmt.Println("OK")
+			if err := store.ApplyMigration(m.version, string(content)); err != nil {
+				slog.Error("Migration failed", "name", m.name, "error", err)
+				return err
+			}
+
+			slog.Info("Migration applied successfully", "name", m.name)
 		}
 
-		fmt.Println("All pending migrations applied successfully.")
+		slog.Info("Migration process completed", "count", len(pending))
 		return nil
 	},
 }
@@ -202,13 +208,18 @@ var downCmd = &cobra.Command{
 		}
 		defer store.Close()
 
+		if err := store.AcquireLock(); err != nil {
+			return err
+		}
+		defer store.ReleaseLock()
+
 		appliedVersions, err := store.GetAppliedVersions()
 		if err != nil {
 			return err
 		}
 
 		if len(appliedVersions) == 0 {
-			fmt.Println("No applied migrations to revert.")
+			slog.Info("No applied migrations to revert")
 			return nil
 		}
 
@@ -237,26 +248,28 @@ var downCmd = &cobra.Command{
 			}
 
 			if downFile == "" {
+				slog.Error("Down migration file not found", "version", version)
 				return fmt.Errorf("down migration file not found for version %d", version)
 			}
 
-			fmt.Printf("Reverting migration: %s... ", downFile)
+			slog.Info("Reverting migration", "name", downFile)
 
 			path := filepath.Join(migrationsDir, downFile)
 			content, err := os.ReadFile(path)
 			if err != nil {
-				return fmt.Errorf("could not read migration file %s: %w", downFile, err)
-			}
-
-			if err := store.RevertMigration(version, string(content)); err != nil {
-				fmt.Println("FAILED")
+				slog.Error("Could not read migration file", "name", downFile, "error", err)
 				return err
 			}
 
-			fmt.Println("OK")
+			if err := store.RevertMigration(version, string(content)); err != nil {
+				slog.Error("Reversion failed", "name", downFile, "error", err)
+				return err
+			}
+
+			slog.Info("Migration reverted successfully", "name", downFile)
 		}
 
-		fmt.Println("Selected migrations reverted successfully.")
+		slog.Info("Reversion process completed", "count", len(toRevert))
 		return nil
 	},
 }

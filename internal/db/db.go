@@ -3,9 +3,12 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	_ "github.com/lib/pq"
 )
+
+const migrationLockID = 123456789 // Unique ID for our advisory lock
 
 type MigrationStore struct {
 	DB *sql.DB
@@ -40,6 +43,32 @@ func (s *MigrationStore) EnsureSchemaTable() error {
 	if err != nil {
 		return fmt.Errorf("could not ensure schema_migrations table: %w", err)
 	}
+	return nil
+}
+
+func (s *MigrationStore) AcquireLock() error {
+	slog.Debug("Acquiring advisory lock", "lock_id", migrationLockID)
+	var locked bool
+	query := "SELECT pg_try_advisory_lock($1)"
+	err := s.DB.QueryRow(query, migrationLockID).Scan(&locked)
+	if err != nil {
+		return fmt.Errorf("could not acquire advisory lock: %w", err)
+	}
+	if !locked {
+		return fmt.Errorf("could not acquire advisory lock: another migration process is currently running")
+	}
+	slog.Info("Advisory lock acquired")
+	return nil
+}
+
+func (s *MigrationStore) ReleaseLock() error {
+	slog.Debug("Releasing advisory lock", "lock_id", migrationLockID)
+	query := "SELECT pg_advisory_unlock($1)"
+	_, err := s.DB.Exec(query, migrationLockID)
+	if err != nil {
+		return fmt.Errorf("could not release advisory lock: %w", err)
+	}
+	slog.Info("Advisory lock released")
 	return nil
 }
 
@@ -126,7 +155,7 @@ func (s *MigrationStore) GetAppliedVersions() ([]int64, error) {
 		versions = append(versions, v)
 	}
 	
-	return versions, nil
+	return versions, rows.Err()
 }
 
 func (s *MigrationStore) Close() error {
