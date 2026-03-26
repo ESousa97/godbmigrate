@@ -2,11 +2,13 @@
 
 > A fast, flexible, and database-agnostic migration tool for Go projects.
 
-![Go Report Card](https://goreportcard.com/badge/github.com/lucassousa/godbmigrate)
-![Go Reference](https://pkg.go.dev/badge/github.com/lucassousa/godbmigrate.svg)
-![License](https://img.shields.io/github/license/lucassousa/godbmigrate)
-![Go Version](https://img.shields.io/github/go-mod/go-version/lucassousa/godbmigrate)
-![Last Commit](https://img.shields.io/github/last-commit/lucassousa/godbmigrate)
+![Go](https://img.shields.io/badge/Language-Go-00ADD8?style=flat&logo=go&logoColor=white)
+![Build Status](https://github.com/ESousa97/godbmigrate/actions/workflows/ci.yml/badge.svg?branch=master)
+![Go Report Card](https://goreportcard.com/badge/github.com/ESousa97/godbmigrate)
+![Go Reference](https://pkg.go.dev/badge/github.com/ESousa97/godbmigrate.svg)
+![License](https://img.shields.io/github/license/ESousa97/godbmigrate)
+![Go Version](https://img.shields.io/github/go-mod/go-version/ESousa97/godbmigrate)
+![Last Commit](https://img.shields.io/github/last-commit/ESousa97/godbmigrate)
 
 ---
 
@@ -64,13 +66,13 @@ if err := store.ApplyMigration(version, sqlContent); err != nil {
 ### Como binário
 
 ```bash
-go install github.com/lucassousa/godbmigrate@latest
+go install github.com/ESousa97/godbmigrate@latest
 ```
 
 ### A partir do source
 
 ```bash
-git clone https://github.com/lucassousa/godbmigrate.git
+git clone https://github.com/ESousa97/godbmigrate.git
 cd godbmigrate
 make build
 # Configure suas variáveis no Makefile ou via flags
@@ -98,7 +100,7 @@ Utiliza **Advisory Locks** do PostgreSQL para garantir que apenas um processo de
 
 ## API Reference
 
-Veja a documentação completa em [pkg.go.dev](https://pkg.go.dev/github.com/lucassousa/godbmigrate).
+Veja a documentação completa em [pkg.go.dev](https://pkg.go.dev/github.com/ESousa97/godbmigrate).
 
 ## Configuração
 
@@ -125,4 +127,4 @@ Distribuído sob a licença MIT. Veja [LICENSE](LICENSE) para mais informações
 
 ## Autor
 
-Enoque Sousa - [Portfólio](https://enoquesousa.vercel.app) - [GitHub](https://github.com/lucassousa)
+Enoque Sousa - [Portfólio](https://enoquesousa.vercel.app) - [GitHub](https://github.com/ESousa97)
