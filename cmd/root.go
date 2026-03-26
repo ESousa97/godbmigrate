@@ -4,7 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/lucassousa/godbmigrate/internal/db"
 	"github.com/spf13/cobra"
+)
+
+var (
+	dsn   string
+	store *db.MigrationStore
 )
 
 var rootCmd = &cobra.Command{
@@ -21,5 +27,15 @@ func Execute() {
 }
 
 func init() {
-	// Root flags if needed
+	rootCmd.PersistentFlags().StringVar(&dsn, "dsn", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable", "PostgreSQL DSN")
+}
+
+// initDB initializes the database connection if a DSN is provided and the command needs it
+func initDB() error {
+	var err error
+	store, err = db.Connect(dsn)
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	return nil
 }

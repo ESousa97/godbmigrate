@@ -85,7 +85,32 @@ var listCmd = &cobra.Command{
 	},
 }
 
+var statusCmd = &cobra.Command{
+	Use:   "status",
+	Short: "Show current migration status",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := initDB(); err != nil {
+			return err
+		}
+		defer store.Close()
+
+		version, err := store.GetLatestVersion()
+		if err != nil {
+			return err
+		}
+
+		if version == 0 {
+			fmt.Println("No migrations have been applied yet.")
+		} else {
+			fmt.Printf("Current migration version: %d\n", version)
+		}
+
+		return nil
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(newCmd)
 	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(statusCmd)
 }
