@@ -99,7 +99,9 @@ var statusCmd = &cobra.Command{
 		if err := initDB(); err != nil {
 			return err
 		}
-		defer store.Close()
+		defer func() {
+			_ = store.Close()
+		}()
 
 		version, err := store.GetLatestVersion()
 		if err != nil {
@@ -130,12 +132,16 @@ var upCmd = &cobra.Command{
 		if err := initDB(); err != nil {
 			return err
 		}
-		defer store.Close()
+		defer func() {
+			_ = store.Close()
+		}()
 
 		if err := store.AcquireLock(); err != nil {
 			return err
 		}
-		defer store.ReleaseLock()
+		defer func() {
+			_ = store.ReleaseLock()
+		}()
 
 		currentVersion, err := store.GetLatestVersion()
 		if err != nil {
@@ -211,12 +217,16 @@ var downCmd = &cobra.Command{
 		if err := initDB(); err != nil {
 			return err
 		}
-		defer store.Close()
+		defer func() {
+			_ = store.Close()
+		}()
 
 		if err := store.AcquireLock(); err != nil {
 			return err
 		}
-		defer store.ReleaseLock()
+		defer func() {
+			_ = store.ReleaseLock()
+		}()
 
 		appliedVersions, err := store.GetAppliedVersions()
 		if err != nil {

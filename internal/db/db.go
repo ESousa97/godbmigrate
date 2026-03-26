@@ -113,13 +113,13 @@ func (s *MigrationStore) ApplyMigration(version int64, sqlContent string) error 
 
 	// Execute migration SQL
 	if _, err := tx.Exec(sqlContent); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return fmt.Errorf("failed to execute migration: %w", err)
 	}
 
 	// Record the migration
 	if _, err := tx.Exec("INSERT INTO schema_migrations (version) VALUES ($1)", version); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return fmt.Errorf("failed to record migration version: %w", err)
 	}
 
@@ -140,13 +140,13 @@ func (s *MigrationStore) RevertMigration(version int64, sqlContent string) error
 
 	// Execute down migration SQL
 	if _, err := tx.Exec(sqlContent); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return fmt.Errorf("failed to execute down migration: %w", err)
 	}
 
 	// Remove the migration record
 	if _, err := tx.Exec("DELETE FROM schema_migrations WHERE version = $1", version); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return fmt.Errorf("failed to remove migration version: %w", err)
 	}
 
@@ -166,7 +166,9 @@ func (s *MigrationStore) GetAppliedVersions() ([]int64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not query applied versions: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	for rows.Next() {
 		var v int64
