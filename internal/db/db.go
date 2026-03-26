@@ -47,7 +47,7 @@ func (s *MigrationStore) EnsureSchemaTable() error {
 		version BIGINT PRIMARY KEY,
 		applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 	);`
-	
+
 	_, err := s.DB.Exec(query)
 	if err != nil {
 		return fmt.Errorf("could not ensure schema_migrations table: %w", err)
@@ -91,7 +91,7 @@ func (s *MigrationStore) ReleaseLock() error {
 func (s *MigrationStore) GetLatestVersion() (int64, error) {
 	var version int64
 	query := "SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1"
-	
+
 	err := s.DB.QueryRow(query).Scan(&version)
 	if err == sql.ErrNoRows {
 		return 0, nil
@@ -99,7 +99,7 @@ func (s *MigrationStore) GetLatestVersion() (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("could not query latest version: %w", err)
 	}
-	
+
 	return version, nil
 }
 
@@ -161,7 +161,7 @@ func (s *MigrationStore) RevertMigration(version int64, sqlContent string) error
 func (s *MigrationStore) GetAppliedVersions() ([]int64, error) {
 	var versions []int64
 	query := "SELECT version FROM schema_migrations ORDER BY version DESC"
-	
+
 	rows, err := s.DB.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("could not query applied versions: %w", err)
@@ -177,7 +177,7 @@ func (s *MigrationStore) GetAppliedVersions() ([]int64, error) {
 		}
 		versions = append(versions, v)
 	}
-	
+
 	return versions, rows.Err()
 }
 

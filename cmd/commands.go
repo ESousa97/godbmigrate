@@ -294,7 +294,7 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(upCmd)
-	
+
 	downCmd.Flags().BoolVar(&revertAll, "all", false, "Revert all applied migrations")
 	rootCmd.AddCommand(downCmd)
 }
