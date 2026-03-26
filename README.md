@@ -9,7 +9,7 @@
   <br>
 
 [![CI](https://github.com/ESousa97/godbmigrate/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/ESousa97/godbmigrate/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ESousa97/godbmigrate)](https://goreportcard.com/report/github.com/ESousa97/godbmigrate)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ESousa97/godbmigrate?=v7)](https://goreportcard.com/report/github.com/ESousa97/godbmigrate?=v7)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ESousa97/godbmigrate.svg)](https://pkg.go.dev/github.com/ESousa97/godbmigrate)
 [![License](https://img.shields.io/github/license/ESousa97/godbmigrate)](https://github.com/ESousa97/godbmigrate/blob/master/LICENSE)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/ESousa97/godbmigrate)](https://github.com/ESousa97/godbmigrate)
