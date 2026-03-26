@@ -4,7 +4,7 @@
 
 ![Go](https://img.shields.io/badge/Language-Go-00ADD8?style=flat&logo=go&logoColor=white)
 ![Build Status](https://github.com/ESousa97/godbmigrate/actions/workflows/ci.yml/badge.svg?branch=master)
-![Go Report Card](https://goreportcard.com/badge/github.com/ESousa97/godbmigrate)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ESousa97/godbmigrate)](https://goreportcard.com/report/github.com/ESousa97/godbmigrate)
 ![Go Reference](https://pkg.go.dev/badge/github.com/ESousa97/godbmigrate.svg)
 ![License](https://img.shields.io/github/license/ESousa97/godbmigrate)
 ![Go Version](https://img.shields.io/github/go-mod/go-version/ESousa97/godbmigrate)
